@@ -17,7 +17,8 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             PropertyAssessmentSeeder::class,
-            // Add other seeders here if you have them
+            CodeViolationsSeeder::class,
+            PermitRequestsSeeder::class,
         ]);
     }
 }
