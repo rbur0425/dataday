@@ -16,7 +16,7 @@ class CodeViolationsSeeder extends Seeder
         // Increase memory limit
         ini_set('memory_limit', '512M');
 
-        $csvFile = storage_path('app/dataday/code_violations.csv');
+        $csvFile = storage_path('app/dataday/Code_Violations.csv');
 
         if (!file_exists($csvFile)) {
             $this->command->error("CSV file not found at: {$csvFile}");

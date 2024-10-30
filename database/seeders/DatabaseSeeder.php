@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             PropertyAssessmentSeeder::class,
             CodeViolationsSeeder::class,
             PermitRequestsSeeder::class,
+            ParcelMapSeeder::class,
         ]);
     }
 }
