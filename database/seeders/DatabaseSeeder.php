@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             PermitRequestsSeeder::class,
             ParcelMapSeeder::class,
             RentalRegistrySeeder::class,
+            VacantPropertiesSeeder::class,
         ]);
     }
 }
