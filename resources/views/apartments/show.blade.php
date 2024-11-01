@@ -60,6 +60,23 @@
             </div>
         </div>
 
+        <!-- Rent vs Buy Component -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <h3 class="text-2xl font-semibold text-gray-900 mb-4">Rent vs Buy</h3>
+            <p class="text-gray-600">With a monthly rent payment of <strong>${{ number_format($apartmentData['max_price']) }}</strong>, here's the estimated home price you could afford with a 7.343% interest rate.</p>
+
+            @php
+            $monthlyRate = 7.343 / 100 / 12;
+            $loanTermMonths = 30 * 12;
+            $purchasePrice = ($apartmentData['max_price'] * (1 - pow(1 + $monthlyRate, -$loanTermMonths))) / $monthlyRate;
+            @endphp
+
+            <p class="text-gray-900 font-medium text-lg mt-4">Estimated Purchase Price: <span class="text-green-600">${{ number_format($purchasePrice, 2) }}</span></p>
+            <p class="text-sm text-gray-500 mt-2">Based on a 30-year mortgage at 7.343% interest.</p>
+            <p class="text-xs text-gray-500 mt-2 italic">Note: This estimate does not include taxes, home insurance, or private mortgage insurance (PMI).</p>
+        </div>
+
+
         <!-- Nearby Information Tabs -->
         <div x-data="{ activeTab: 'violations' }" class="bg-white rounded-xl shadow-sm p-6">
             <div class="border-b border-gray-200 mb-6">

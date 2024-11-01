@@ -56,6 +56,7 @@ class ApartmentController extends Controller
             'complex_name' => $apartment->complex_name,
             'street_address' => $apartment->street_address,
             'price_range' => $this->getPriceRange($apartment->min_price, $apartment->max_price),
+            'max_price' => $apartment->max_price,
             'types_available' => $apartment->types_available,
             'square_footage' => $apartment->square_footage ? number_format($apartment->square_footage) . ' sq ft' : null,
             'primary_image_url' => $apartment->primary_image_url,
