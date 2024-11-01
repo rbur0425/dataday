@@ -8,9 +8,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_api_key') }}"></script>
+    <style>
+        .scroll-smooth {
+            scroll-behavior: smooth;
+        }
+
+        .card-highlight {
+            box-shadow: 0 0 0 3px rgb(59 130 246 / 0.5);
+        }
+    </style>
 </head>
 
-<body class="bg-gray-100">
+<body class="bg-gray-100 scroll-smooth">
     <div x-data="apartmentsData()" class="container mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold mb-8">🕵️ Rent Detective</h1>
 
@@ -20,9 +29,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <template x-for="apartment in apartments" :key="apartment.id">
                         <div
+                            :id="'apartment-' + apartment.id"
                             class="bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-200 hover:scale-[1.02]"
                             @mouseenter="highlightMarker(apartment.id)"
-                            @mouseleave="unhighlightMarker(apartment.id)">
+                            @mouseleave="unhighlightMarker(apartment.id)"
+                            :class="{'card-highlight': selectedApartment === apartment.id}">
                             <!-- Image -->
                             <div class="relative h-48">
                                 <img
@@ -78,6 +89,7 @@
                 map: null,
                 markers: {},
                 infoWindows: {},
+                selectedApartment: null,
 
                 init() {
                     this.initMap();
@@ -121,9 +133,30 @@
                         marker.addListener('mouseover', () => infoWindow.open(this.map, marker));
                         marker.addListener('mouseout', () => infoWindow.close());
 
+                        // Add click listener to marker
+                        marker.addListener('click', () => {
+                            this.scrollToCard(apartment.id);
+                        });
+
                         this.markers[apartment.id] = marker;
                         this.infoWindows[apartment.id] = infoWindow;
                     });
+                },
+
+                scrollToCard(apartmentId) {
+                    this.selectedApartment = apartmentId;
+                    const element = document.getElementById(`apartment-${apartmentId}`);
+                    if (element) {
+                        element.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+
+                        // Remove highlight after a delay
+                        setTimeout(() => {
+                            this.selectedApartment = null;
+                        }, 2000);
+                    }
                 },
 
                 highlightMarker(apartmentId) {
