@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             ParcelMapSeeder::class,
             RentalRegistrySeeder::class,
             VacantPropertiesSeeder::class,
+            ApartmentsTableSeeder::class,
         ]);
     }
 }
