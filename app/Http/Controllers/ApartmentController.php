@@ -36,6 +36,25 @@ class ApartmentController extends Controller
         ]);
     }
 
+    public function show($id)
+    {
+        $apartment = DB::table('apartments')
+            ->where('id', $id)
+            ->first();
+
+        if (!$apartment) {
+            abort(404);
+        }
+
+        $apartment = (array) $apartment;
+        $apartment['price_range'] = $this->getPriceRange($apartment['min_price'], $apartment['max_price']);
+        $apartment['square_footage'] = $apartment['square_footage'] ? number_format($apartment['square_footage']) . ' sq ft' : null;
+
+        return view('apartments.show', [
+            'apartment' => $apartment
+        ]);
+    }
+
     private function formatPrice($price)
     {
         return '$' . number_format($price);
