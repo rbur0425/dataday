@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class ApartmentController extends Controller
 {
-    public function index()
+    const MILES_TO_METERS = 1609.34;
+    const SEARCH_RADIUS_MILES = 0.5;
+
+    public function index(): View
     {
         $apartments = DB::table('apartments')
             ->whereNotNull('latitude')
@@ -46,13 +51,120 @@ class ApartmentController extends Controller
             abort(404);
         }
 
-        $apartment = (array) $apartment;
-        $apartment['price_range'] = $this->getPriceRange($apartment['min_price'], $apartment['max_price']);
-        $apartment['square_footage'] = $apartment['square_footage'] ? number_format($apartment['square_footage']) . ' sq ft' : null;
+        $apartmentData = [
+            'id' => $apartment->id,
+            'complex_name' => $apartment->complex_name,
+            'street_address' => $apartment->street_address,
+            'price_range' => $this->getPriceRange($apartment->min_price, $apartment->max_price),
+            'types_available' => $apartment->types_available,
+            'square_footage' => $apartment->square_footage ? number_format($apartment->square_footage) . ' sq ft' : null,
+            'primary_image_url' => $apartment->primary_image_url,
+            'phone_number' => $apartment->phone_number,
+            'latitude' => $apartment->latitude,
+            'longitude' => $apartment->longitude,
+        ];
 
-        return view('apartments.show', [
-            'apartment' => $apartment
-        ]);
+        $radiusMeters = self::SEARCH_RADIUS_MILES * self::MILES_TO_METERS;
+
+        $violations = $this->getNearbyViolations($apartment->latitude, $apartment->longitude, $radiusMeters);
+        $assessments = $this->getNearbyAssessments($apartment->latitude, $apartment->longitude, $radiusMeters);
+        $vacantProperties = $this->getNearbyVacantProperties($apartment->latitude, $apartment->longitude, $radiusMeters);
+
+        return view('apartments.show', compact(
+            'apartmentData',
+            'violations',
+            'assessments',
+            'vacantProperties'
+        ));
+    }
+
+
+    private function getNearbyViolations($lat, $lng, $radius)
+    {
+        $apartmentAddress = DB::table('apartments')
+            ->where('latitude', $lat)
+            ->where('longitude', $lng)
+            ->value('street_address');
+
+        return DB::table('code_violations')
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->select([
+                'violation_number',
+                'complaint_address',
+                'violation',
+                'violation_date',
+                'status_type_name',
+                'complaint_type_name',
+                'complaint_zip',
+                DB::raw("
+                CASE 
+                    WHEN LOWER(?) LIKE CONCAT('%', LOWER(complaint_address), '%')
+                    THEN 0.00 
+                    ELSE (ST_Distance_Sphere(
+                        point(longitude, latitude), 
+                        point(?, ?)
+                    ) / 1609.34)
+                END as distance_miles
+            ")
+            ])
+            ->whereRaw("ST_Distance_Sphere(point(longitude, latitude), point(?, ?)) <= ?", [$lng, $lat, $radius])
+            ->orderByRaw("
+            CASE 
+                WHEN LOWER(?) LIKE CONCAT('%', LOWER(complaint_address), '%')
+                THEN 0 
+                ELSE 1 
+            END")
+            ->orderBy('violation_date', 'desc')
+            ->orderBy('distance_miles', 'asc')
+            ->setBindings([
+                // Select bindings
+                $apartmentAddress,
+                $lng,
+                $lat,
+                // Where bindings
+                $lng,
+                $lat,
+                $radius,
+                // Order bindings
+                $apartmentAddress
+            ])
+            ->get();
+    }
+
+
+    private function getNearbyAssessments($lat, $lng, $radius)
+    {
+        return DB::table('property_assessments')
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->whereRaw("ST_Distance_Sphere(point(longitude, latitude), point(?, ?)) <= ?", [$lng, $lat, $radius])
+            ->select([
+                'property_address',
+                'property_class',
+                'prop_class_description',
+                'total_assessment',
+                DB::raw("ST_Distance_Sphere(point(longitude, latitude), point($lng, $lat)) / 1609.34 as distance_miles")
+            ])
+            ->orderByRaw("ST_Distance_Sphere(point(longitude, latitude), point($lng, $lat))")
+            ->get();
+    }
+
+    private function getNearbyVacantProperties($lat, $lng, $radius)
+    {
+        return DB::table('vacant_properties')
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->whereRaw("ST_Distance_Sphere(point(longitude, latitude), point(?, ?)) <= ?", [$lng, $lat, $radius])
+            ->select([
+                'property_address',
+                'vacant_type',
+                'vpr_result',
+                'completion_date',
+                DB::raw("ST_Distance_Sphere(point(longitude, latitude), point($lng, $lat)) / 1609.34 as distance_miles")
+            ])
+            ->orderByRaw("ST_Distance_Sphere(point(longitude, latitude), point($lng, $lat))")
+            ->get();
     }
 
     private function formatPrice($price)
