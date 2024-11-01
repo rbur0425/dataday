@@ -99,6 +99,13 @@
                         class="border-b-2 py-4 px-1 text-sm font-medium">
                         Vacant Properties ({{ count($vacantProperties) }})
                     </button>
+                    <!-- New Rental Registries Tab -->
+                    <button
+                        @click="activeTab = 'rental_registries'"
+                        :class="{'border-blue-500 text-blue-600': activeTab === 'rental_registries'}"
+                        class="border-b-2 py-4 px-1 text-sm font-medium">
+                        Other Nearby Rentals ({{ count($rentalRegistries) }})
+                    </button>
                 </nav>
             </div>
 
@@ -177,6 +184,41 @@
                 <p class="text-gray-500 text-center py-4">No vacant properties found within 0.5 miles</p>
                 @endif
             </div>
+
+            <!-- Rental Registries Tab Content -->
+            <div x-show="activeTab === 'rental_registries'" class="space-y-4">
+                @if(count($rentalRegistries) > 0)
+                @foreach($rentalRegistries as $registry)
+                <div class="border rounded-lg p-4">
+                    <div class="flex justify-between">
+                        <h4 class="font-medium">{{ $registry->property_address }}</h4>
+                        <span class="text-sm text-gray-500">{{ number_format($registry->distance_miles, 2) }} miles away</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">Address: {{ $registry->property_address }}</p>
+                    <p class="text-sm text-gray-600 mt-2">Inspection Period: {{ $registry->inspect_period }}</p>
+                    <p class="text-sm text-gray-600 mt-2">Completion Type: {{ $registry->completion_type_name }}</p>
+                    @if($registry->completion_date)
+                    <p class="text-sm text-gray-500 mt-2">
+                        Completion Date: {{ \Carbon\Carbon::parse($registry->completion_date)->format('M d, Y') }}
+                    </p>
+                    @endif
+                    <p class="text-sm text-gray-600 mt-2">Needs RR: {{ $registry->needs_rr ? 'Yes' : 'No' }}</p>
+                    @if($registry->valid_until)
+                    <p class="text-sm mt-2 {{ \Carbon\Carbon::parse($registry->valid_until)->isPast() ? 'text-red-500' : 'text-gray-500' }}">
+                        Valid Until: {{ \Carbon\Carbon::parse($registry->valid_until)->format('M d, Y') }}
+                    </p>
+                    @endif
+                    <p class="text-sm text-gray-600 mt-2">RR Valid: {{ $registry->rr_is_valid ? 'Yes' : 'No' }}</p>
+                    <p class="text-sm font-medium text-gray-900 mt-2">
+                        Date application received: {{ \Carbon\Carbon::parse($registry->rr_app_received)->format('M d, Y') }}
+                    </p>
+                </div>
+                @endforeach
+                @else
+                <p class="text-gray-500 text-center py-4">No rental registries found within {{ self::SEARCH_RADIUS_MILES }} miles</p>
+                @endif
+            </div>
+
         </div>
     </main>
 </body>

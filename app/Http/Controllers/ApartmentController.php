@@ -70,13 +70,29 @@ class ApartmentController extends Controller
         $violations = $this->getNearbyViolations($apartment->latitude, $apartment->longitude, $radiusMeters);
         $assessments = $this->getNearbyAssessments($apartment->latitude, $apartment->longitude, $radiusMeters);
         $vacantProperties = $this->getNearbyVacantProperties($apartment->latitude, $apartment->longitude, $radiusMeters);
+        $rentalRegistries = $this->getNearbyRentalRegistries($apartment->latitude, $apartment->longitude, $radiusMeters);
 
         return view('apartments.show', compact(
             'apartmentData',
             'violations',
             'assessments',
-            'vacantProperties'
+            'vacantProperties',
+            'rentalRegistries'
         ));
+    }
+
+    private function getNearbyRentalRegistries($latitude, $longitude, $radius)
+    {
+        return DB::table('rental_registries')
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->whereRaw("ST_Distance_Sphere(point(longitude, latitude), point(?, ?)) <= ?", [$longitude, $latitude, $radius])
+            ->select([
+                '*',
+                DB::raw("ST_Distance_Sphere(point(longitude, latitude), point($longitude, $latitude)) / 1609.34 as distance_miles")
+            ])
+            ->orderByRaw("ST_Distance_Sphere(point(longitude, latitude), point($longitude, $latitude))")
+            ->get();
     }
 
 
