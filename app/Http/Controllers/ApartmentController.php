@@ -88,6 +88,10 @@ class ApartmentController extends Controller
 
         // Fetch environmental data
         $airQualityIndex = $this->getAirQuality($apartment->latitude, $apartment->longitude);
+        $walkScore = $this->getWalkabilityScore($apartment->latitude, $apartment->longitude);
+        $bikeScore = $this->getBikeabilityScore($apartment->latitude, $apartment->longitude);
+        $nearbyParks = $this->getNearbyParksCount($apartment->latitude, $apartment->longitude);
+
 
         return view('apartments.show', compact(
             'apartmentData',
@@ -96,7 +100,10 @@ class ApartmentController extends Controller
             'vacantProperties',
             'rentalRegistries',
             'formattedViolations',
-            'airQualityIndex'
+            'airQualityIndex',
+            'walkScore',
+            'bikeScore',
+            'nearbyParks'
         ));
     }
 
@@ -265,9 +272,11 @@ class ApartmentController extends Controller
 
     private function getAirQuality($latitude, $longitude)
     {
-        $url = "https://api.waqi.info/feed/geo:$latitude;$longitude/?token=demo";
+        $token = config('services.airqaulity.api_key');
+        $url = "https://api.waqi.info/feed/geo:$latitude;$longitude/?token=$token";
 
         $response = Http::get($url);
+
         if ($response->successful() && isset($response->json()['data']['aqi'])) {
             $aqi = $response->json()['data']['aqi'];
             $category = $this->getAirQualityCategory($aqi);
@@ -297,5 +306,110 @@ class ApartmentController extends Controller
         } else {
             return ['label' => 'Hazardous', 'color' => 'text-maroon-700'];
         }
+    }
+
+    private function getWalkabilityScore($latitude, $longitude)
+    {
+        $apiKey = config('services.walkscore.api_key');
+        $url = "https://api.walkscore.com/score";
+
+        $response = Http::get($url, [
+            'format' => 'json',
+            'lat' => $latitude,
+            'lon' => $longitude,
+            'wsapikey' => $apiKey,
+        ]);
+
+        if ($response->successful() && isset($response->json()['walkscore'])) {
+            $score = $response->json()['walkscore'];
+            $category = $this->getWalkabilityCategory($score);
+
+            return [
+                'score' => $score,
+                'label' => $response->json()['description'],
+                'color' => $category['color']
+            ];
+        }
+
+        return ['score' => 'N/A', 'label' => 'Unavailable', 'color' => 'text-gray-500'];
+    }
+
+    private function getWalkabilityCategory($score)
+    {
+        if ($score >= 90) {
+            return ['label' => 'Walker’s Paradise', 'color' => 'text-green-700'];
+        } elseif ($score >= 70) {
+            return ['label' => 'Very Walkable', 'color' => 'text-green-600'];
+        } elseif ($score >= 50) {
+            return ['label' => 'Somewhat Walkable', 'color' => 'text-yellow-600'];
+        } elseif ($score >= 25) {
+            return ['label' => 'Car-Dependent', 'color' => 'text-orange-600'];
+        } else {
+            return ['label' => 'Car-Dependent', 'color' => 'text-red-600'];
+        }
+    }
+
+    private function getBikeabilityScore($latitude, $longitude)
+    {
+        $apiKey = config('services.walkscore.api_key');
+        $url = "https://api.walkscore.com/score";
+
+        $response = Http::get($url, [
+            'format' => 'json',
+            'lat' => $latitude,
+            'lon' => $longitude,
+            'wsapikey' => $apiKey,
+            'transit' => 0,
+            'bike' => 1, // Request bike score
+        ]);
+
+        if ($response->successful() && isset($response->json()['bike']['score'])) {
+            $score = $response->json()['bike']['score'];
+            $category = $this->getBikeabilityCategory($score);
+
+            return [
+                'score' => $score,
+                'label' => $category['label'],
+                'color' => $category['color']
+            ];
+        }
+
+        return ['score' => 'N/A', 'label' => 'Unavailable', 'color' => 'text-gray-500'];
+    }
+
+
+    private function getBikeabilityCategory($score)
+    {
+        if ($score >= 90) {
+            return ['label' => 'Biker’s Paradise', 'color' => 'text-green-700'];
+        } elseif ($score >= 70) {
+            return ['label' => 'Very Bikeable', 'color' => 'text-green-600'];
+        } elseif ($score >= 50) {
+            return ['label' => 'Bikeable', 'color' => 'text-yellow-600'];
+        } elseif ($score >= 25) {
+            return ['label' => 'Somewhat Bikeable', 'color' => 'text-orange-600'];
+        } else {
+            return ['label' => 'Not Bikeable', 'color' => 'text-red-600'];
+        }
+    }
+
+    private function getNearbyParksCount($latitude, $longitude)
+    {
+        $apiKey = config('services.google.maps_api_key');
+        $url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
+
+        $response = Http::get($url, [
+            'location' => "$latitude,$longitude",
+            'radius' => 2000, // Radius in meters
+            'type' => 'park',
+            'key' => $apiKey,
+        ]);
+
+        if ($response->successful() && isset($response->json()['results'])) {
+            // Return the first 5 parks with name, latitude, and longitude
+            return $response->json()['results'];
+        }
+
+        return []; // Return an empty array if no parks are found
     }
 }

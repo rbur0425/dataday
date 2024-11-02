@@ -187,7 +187,12 @@
                     <i class="fas fa-walking text-green-600 text-2xl mr-3"></i>
                     <div>
                         <p class="text-lg font-semibold text-gray-900">Walkability</p>
-                        <p class="text-gray-600">Score: <span class="font-medium text-green-700">{{ $walkabilityScore ?? 'Loading...' }}</span></p>
+                        <p class="text-gray-600">
+                            Score: <span class="font-medium text-green-700">{{ $walkScore['score'] ?? 'Loading...' }}</span> -
+                            <span class="{{ $walkScore['color'] ?? 'text-gray-500' }}">
+                                {{ $walkScore['label'] ?? 'Loading...' }}
+                            </span>
+                        </p>
                     </div>
                 </div>
 
@@ -196,7 +201,12 @@
                     <i class="fas fa-bicycle text-green-600 text-2xl mr-3"></i>
                     <div>
                         <p class="text-lg font-semibold text-gray-900">Bikeability</p>
-                        <p class="text-gray-600">Score: <span class="font-medium text-green-700">{{ $bikeabilityScore ?? 'Loading...' }}</span></p>
+                        <p class="text-gray-600">
+                            Score: <span class="font-medium text-green-700">{{ $bikeScore['score'] ?? 'Loading...' }}</span> -
+                            <span class="{{ $bikeScore['color'] ?? 'text-gray-500' }}">
+                                {{ $bikeScore['label'] ?? 'Loading...' }}
+                            </span>
+                        </p>
                     </div>
                 </div>
 
@@ -205,12 +215,45 @@
                     <i class="fas fa-tree text-green-600 text-2xl mr-3"></i>
                     <div>
                         <p class="text-lg font-semibold text-gray-900">Green Spaces</p>
-                        <p class="text-gray-600">Nearby Parks: <span class="font-medium text-green-700">{{ $nearbyParks ?? 'Loading...' }}</span></p>
+                        <p class="text-gray-600">
+                            Nearby Parks: <span class="font-medium text-green-700">{{ count($nearbyParks) ?? 'N/A' }}</span>
+                        </p>
+                        <p class="text-xs text-gray-500 italic">*Within a 0.13 mile radius</p>
                     </div>
                 </div>
             </div>
 
-            <p class="text-xs text-gray-500 mt-4 italic">*Data provided by Google Maps API and other environmental sources.</p>
+            <p class="text-xs text-gray-500 mt-4 italic">*Data provided by Google Maps API, APICN Org and other environmental sources.</p>
+        </div>
+
+        <!-- Nearby Parks Component -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <h3 class="text-2xl font-semibold text-green-900 mb-4">Nearby Parks</h3>
+            <p class="text-gray-600 mb-4">Explore the parks in the vicinity of this property.</p>
+
+            @if(count($nearbyParks) > 0)
+            <ul class="space-y-4">
+                @foreach(array_slice($nearbyParks, 0, 5) as $park)
+                <li class="flex items-center">
+                    <i class="fas fa-tree text-green-600 text-xl mr-3"></i>
+                    <div>
+                        <p class="text-lg font-semibold text-gray-900">{{ $park['name'] }}
+                            @if(isset($park['rating']))
+                            <span class="text-yellow-500 ml-2">⭐ {{ $park['rating'] }}</span>
+                            @endif
+                        </p>
+                        <a href="https://www.google.com/maps/place/?q=place_id:{{ $park['place_id'] }}"
+                            target="_blank"
+                            class="text-blue-500 hover:underline">
+                            View on Google Maps
+                        </a>
+                    </div>
+                </li>
+                @endforeach
+            </ul>
+            @else
+            <p class="text-gray-500">No parks found within a 2 km radius.</p>
+            @endif
         </div>
 
 

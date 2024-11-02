@@ -43,5 +43,13 @@ return [
         'api_key' => env('OPENAI_API_KEY'),
     ],
 
+    'walkscore' => [
+        'api_key' => env('WALK_SCORE_API_KEY'),
+    ],
+
+    'airqaulity' => [
+        'api_key' => env('AQI_API_KEY'),
+    ],
+
 
 ];
