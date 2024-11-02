@@ -107,6 +107,7 @@ class ApartmentController extends Controller
                 DB::raw("ST_Distance_Sphere(point(longitude, latitude), point($longitude, $latitude)) / 1609.34 as distance_miles")
             ])
             ->orderByRaw("ST_Distance_Sphere(point(longitude, latitude), point($longitude, $latitude))")
+            ->limit(20)
             ->get();
     }
 
@@ -161,6 +162,7 @@ class ApartmentController extends Controller
                 // Order bindings
                 $apartmentAddress
             ])
+            ->limit(20)
             ->get();
     }
 
@@ -179,6 +181,7 @@ class ApartmentController extends Controller
                 DB::raw("ST_Distance_Sphere(point(longitude, latitude), point($lng, $lat)) / 1609.34 as distance_miles")
             ])
             ->orderByRaw("ST_Distance_Sphere(point(longitude, latitude), point($lng, $lat))")
+            ->limit(20)
             ->get();
     }
 
@@ -196,6 +199,7 @@ class ApartmentController extends Controller
                 DB::raw("ST_Distance_Sphere(point(longitude, latitude), point($lng, $lat)) / 1609.34 as distance_miles")
             ])
             ->orderByRaw("ST_Distance_Sphere(point(longitude, latitude), point($lng, $lat))")
+            ->limit(20)
             ->get();
     }
 
