@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Http;
+
 
 class ApartmentController extends Controller
 {
@@ -72,12 +74,25 @@ class ApartmentController extends Controller
         $vacantProperties = $this->getNearbyVacantProperties($apartment->latitude, $apartment->longitude, $radiusMeters);
         $rentalRegistries = $this->getNearbyRentalRegistries($apartment->latitude, $apartment->longitude, $radiusMeters);
 
+        // Convert violations to an array and JSON-encode for JavaScript
+        $formattedViolations = $violations->map(function ($violation) {
+            return [
+                'violation_number' => $violation->violation_number,
+                'complaint_address' => $violation->complaint_address,
+                'violation' => $violation->violation,
+                'violation_date' => $violation->violation_date,
+                'status_type_name' => $violation->status_type_name,
+                'distance_miles' => $violation->distance_miles
+            ];
+        });
+
         return view('apartments.show', compact(
             'apartmentData',
             'violations',
             'assessments',
             'vacantProperties',
-            'rentalRegistries'
+            'rentalRegistries',
+            'formattedViolations'
         ));
     }
 
@@ -212,5 +227,31 @@ class ApartmentController extends Controller
         $lng = $apartments->avg('lng');
 
         return compact('lat', 'lng');
+    }
+
+    public function generateNegotiationScript(Request $request)
+    {
+        $codeViolations = $request->input('code_violations');
+
+        // Prepare the user message based on whether there are code violations
+        if ($codeViolations) {
+            $userMessage = "You are a renter looking to rent an apartment from a landlord. The landlord has the following code violations. Please make a script to negotiate a lower rent based on the code violations. Here are the code violations: " . $codeViolations;
+        } else {
+            $userMessage = "You are a renter looking to rent an apartment from a landlord. Make a script the renter can use to negotiate a lower rent.";
+        }
+
+        // Send the request to the GPT-4 API with structured messages
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . config('services.openai.api_key'),
+        ])->post('https://api.openai.com/v1/chat/completions', [
+            'model' => 'gpt-4o-mini',
+            'messages' => [
+                ['role' => 'system', 'content' => 'You are an assistant who helps renters negotiate rent based on apartment conditions.'],
+                ['role' => 'user', 'content' => $userMessage],
+            ],
+            'max_tokens' => 2000,
+        ]);
+
+        return response()->json($response->json());
     }
 }

@@ -7,6 +7,11 @@
     <title>{{ $apartmentData['complex_name'] }} - Rent Detective</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Include marked.js for markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        console.log(typeof marked); // Should output "function" if loaded successfully
+    </script>
 </head>
 
 <body class="bg-gray-50">
@@ -75,6 +80,87 @@
             <p class="text-sm text-gray-500 mt-2">Based on a 30-year mortgage at 7.343% interest.</p>
             <p class="text-xs text-gray-500 mt-2 italic">Note: This estimate does not include taxes, home insurance, or private mortgage insurance (PMI).</p>
         </div>
+
+        <!-- Rent Negotiation Component -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <h3 class="text-2xl font-semibold text-gray-900 mb-4">Rent Negotiation</h3>
+            <p class="text-gray-600 mb-4">Negotiate a lower rent based on the current code violations for this property.</p>
+
+            <div x-data="rentNegotiation()" class="text-center">
+                <button
+                    x-show="!negotiationScript"
+                    @click="generateScript"
+                    class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                    Generate Script
+                </button>
+
+                <template x-if="negotiationScript">
+                    <div class="negotiation-script mt-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Negotiation Script:</h3>
+                        <!-- Render markdown as HTML using x-html -->
+                        <div class="text-gray-700 mt-2" x-html="renderMarkdown(negotiationScript)"></div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <script>
+            // Check if marked is loaded as an object with parse method
+            console.log(typeof marked); // To check if marked is loaded correctly
+
+            function rentNegotiation() {
+                return {
+                    codeViolations: @json($formattedViolations),
+                    negotiationScript: '',
+
+                    generateScript() {
+                        const nearbyViolations = this.codeViolations.filter(
+                            violation => parseFloat(violation.distance_miles) === 0.00
+                        );
+
+                        const codeViolationsList = nearbyViolations.length > 0 ?
+                            nearbyViolations.map(violation => violation.violation).join(', ') :
+                            false;
+
+                        fetch('/apartments/generate-negotiation-script', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                },
+                                body: JSON.stringify({
+                                    code_violations: codeViolationsList
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                console.log(data); // Log the entire response to confirm structure
+                                this.negotiationScript = data.choices[0]?.message?.content || "No content received.";
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                            });
+                    },
+
+                    // Function to render markdown as HTML
+                    renderMarkdown(content) {
+                        // Remove horizontal rules (e.g., "---" or "___")
+                        const cleanedContent = content.replace(/^\s*[-_]{3,}\s*$/gm, '');
+
+                        // Parse cleaned markdown content to HTML
+                        if (marked && typeof marked.parse === 'function') {
+                            return marked.parse(cleanedContent);
+                        } else if (typeof marked === 'function') {
+                            return marked(cleanedContent);
+                        } else {
+                            console.error('Marked library not loaded correctly.');
+                            return cleanedContent; // Return cleaned markdown if marked isn't available
+                        }
+                    }
+                }
+            }
+        </script>
+
 
 
         <!-- Nearby Information Tabs -->
