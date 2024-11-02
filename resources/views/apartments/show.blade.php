@@ -80,6 +80,66 @@
             <p class="text-xs text-gray-500 mt-2 italic">Note: This estimate does not include taxes, home insurance, or private mortgage insurance (PMI).</p>
         </div>
 
+        <!-- Rental Forecast Component -->
+        @if($rentalForecast['has_data'] && $rentalForecast['current_price'] > 0 && $rentalForecast['sample_size'] > 0)
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <h3 class="text-2xl font-semibold text-gray-900 mb-4">Rental Market Trends</h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between border-b pb-4">
+                    <div>
+                        <p class="text-gray-600">Projected Annual Change</p>
+                        <p class="text-2xl font-bold text-gray-900">
+                            {{ $rentalForecast['average_growth_rate'] }}%
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-gray-600">Estimated Annual Change</p>
+                        <p class="text-2xl font-bold text-gray-900">
+                            ${{ number_format(abs($rentalForecast['forecast_amount'])) }}
+                            <span class="text-sm font-normal text-gray-600">
+                                per year
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <p class="text-sm text-gray-600">Highest Monthly Growth</p>
+                        <p class="text-lg font-semibold text-gray-900">
+                            {{ $rentalForecast['max_growth_rate'] }}%
+                        </p>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <p class="text-sm text-gray-600">Lowest Monthly Growth</p>
+                        <p class="text-lg font-semibold text-gray-900">
+                            {{ $rentalForecast['min_growth_rate'] }}%
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 rounded-lg p-4 mt-4">
+                    <p class="text-sm text-gray-600">Current Market Rate</p>
+                    <p class="text-lg font-semibold text-gray-900">
+                        ${{ number_format($rentalForecast['current_price'], 2) }}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Data for ZIP code: {{ $rentalForecast['zip_code'] }}
+                    </p>
+                </div>
+
+                <div class="mt-4">
+                    <p class="text-sm text-gray-500">
+                        *Analysis based on rental data from {{ $rentalForecast['date_range'] }}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-2">
+                        Note: Projections are based on historical trends and may not reflect future market conditions.
+                    </p>
+                </div>
+            </div>
+        </div>
+        @endif
+
         <!-- Rent Negotiation Component -->
         <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
             <h3 class="text-2xl font-semibold text-gray-900 mb-4">Rent Negotiation</h3>

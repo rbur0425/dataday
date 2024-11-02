@@ -73,6 +73,7 @@ class ApartmentController extends Controller
         $assessments = $this->getNearbyAssessments($apartment->latitude, $apartment->longitude, $radiusMeters);
         $vacantProperties = $this->getNearbyVacantProperties($apartment->latitude, $apartment->longitude, $radiusMeters);
         $rentalRegistries = $this->getNearbyRentalRegistries($apartment->latitude, $apartment->longitude, $radiusMeters);
+        $rentalForecast = $this->getZillowRentalForecast($apartment->street_address);
 
         // Convert violations to an array and JSON-encode for JavaScript
         $formattedViolations = $violations->map(function ($violation) {
@@ -103,7 +104,8 @@ class ApartmentController extends Controller
             'airQualityIndex',
             'walkScore',
             'bikeScore',
-            'nearbyParks'
+            'nearbyParks',
+            'rentalForecast'
         ));
     }
 
@@ -411,5 +413,78 @@ class ApartmentController extends Controller
         }
 
         return []; // Return an empty array if no parks are found
+    }
+
+    private function getZillowRentalForecast($address)
+    {
+        $zipCode = $this->extractZipCode($address);
+
+        // Get rental data for the zip code
+        $rentalData = DB::table('zillow_rental_data')
+            ->where('region_name', (string)$zipCode)
+            ->first();
+
+        if (!$rentalData) {
+            return ['has_data' => false];
+        }
+
+        // Get all price columns with values
+        $prices = [];
+        $dates = [];
+        foreach ((array)$rentalData as $key => $value) {
+            if (strpos($key, 'price_') === 0 && !is_null($value)) {
+                preg_match('/price_(\d{4})_(\d{2})/', $key, $matches);
+                if ($matches) {
+                    $date = $matches[1] . '-' . $matches[2];
+                    $dates[] = $date;
+                    $prices[] = $value;
+                }
+            }
+        }
+
+        if (empty($prices)) {
+            return ['has_data' => false];
+        }
+
+        // Calculate month-over-month growth rates
+        $growthRates = [];
+        for ($i = 0; $i < count($prices) - 1; $i++) {
+            if ($prices[$i] > 0) {
+                $monthlyGrowthRate = (($prices[$i + 1] - $prices[$i]) / $prices[$i]) * 100;
+                $growthRates[] = $monthlyGrowthRate;
+            }
+        }
+
+        if (empty($growthRates)) {
+            return ['has_data' => false];
+        }
+
+        // Calculate metrics
+        $avgMonthlyGrowthRate = array_sum($growthRates) / count($growthRates);
+        $annualizedGrowthRate = $avgMonthlyGrowthRate * 12;
+        $currentPrice = end($prices);
+        $forecastAmount = $currentPrice * ($annualizedGrowthRate / 100);
+
+        return [
+            'average_growth_rate' => round($annualizedGrowthRate, 1),
+            'max_growth_rate' => round(max($growthRates), 1),
+            'min_growth_rate' => round(min($growthRates), 1),
+            'sample_size' => count($growthRates),
+            'forecast_amount' => round($forecastAmount, 2),
+            'current_price' => $currentPrice,
+            'has_data' => true,
+            'zip_code' => $zipCode,
+            'date_range' => min($dates) . ' to ' . max($dates)
+        ];
+    }
+
+    private function extractZipCode($address)
+    {
+        // Pattern matches 5-digit ZIP code at the end of the address
+        if (preg_match('/\b(\d{5})\b/', $address, $matches)) {
+            return $matches[1];
+        }
+        // If no ZIP code found, return Syracuse's default ZIP
+        return '13204'; // Default to downtown
     }
 }
