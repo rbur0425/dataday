@@ -86,13 +86,17 @@ class ApartmentController extends Controller
             ];
         });
 
+        // Fetch environmental data
+        $airQualityIndex = $this->getAirQuality($apartment->latitude, $apartment->longitude);
+
         return view('apartments.show', compact(
             'apartmentData',
             'violations',
             'assessments',
             'vacantProperties',
             'rentalRegistries',
-            'formattedViolations'
+            'formattedViolations',
+            'airQualityIndex'
         ));
     }
 
@@ -257,5 +261,41 @@ class ApartmentController extends Controller
         ]);
 
         return response()->json($response->json());
+    }
+
+    private function getAirQuality($latitude, $longitude)
+    {
+        $url = "https://api.waqi.info/feed/geo:$latitude;$longitude/?token=demo";
+
+        $response = Http::get($url);
+        if ($response->successful() && isset($response->json()['data']['aqi'])) {
+            $aqi = $response->json()['data']['aqi'];
+            $category = $this->getAirQualityCategory($aqi);
+
+            return [
+                'index' => $aqi,
+                'label' => $category['label'],
+                'color' => $category['color']
+            ];
+        }
+
+        return ['index' => 'N/A', 'label' => 'Unavailable', 'color' => 'text-gray-500'];
+    }
+
+    private function getAirQualityCategory($aqi)
+    {
+        if ($aqi <= 50) {
+            return ['label' => 'Good', 'color' => 'text-green-700'];
+        } elseif ($aqi <= 100) {
+            return ['label' => 'Moderate', 'color' => 'text-yellow-600'];
+        } elseif ($aqi <= 150) {
+            return ['label' => 'Unhealthy for Sensitive Groups', 'color' => 'text-orange-600'];
+        } elseif ($aqi <= 200) {
+            return ['label' => 'Unhealthy', 'color' => 'text-red-600'];
+        } elseif ($aqi <= 300) {
+            return ['label' => 'Very Unhealthy', 'color' => 'text-purple-700'];
+        } else {
+            return ['label' => 'Hazardous', 'color' => 'text-maroon-700'];
+        }
     }
 }

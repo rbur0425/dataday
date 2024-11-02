@@ -9,9 +9,8 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- Include marked.js for markdown parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script>
-        console.log(typeof marked); // Should output "function" if loaded successfully
-    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
 </head>
 
 <body class="bg-gray-50">
@@ -161,6 +160,58 @@
             }
         </script>
 
+
+        <!-- Green Section Component -->
+        <div class="bg-green-50 rounded-xl shadow-sm p-6 mb-8">
+            <h3 class="text-2xl font-semibold text-green-900 mb-4">Environmental Quality & Green Initiatives</h3>
+            <p class="text-gray-600 mb-4">Check out the environmental factors and green initiatives in the neighborhood of this property.</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <!-- Air Quality -->
+                <div class="flex items-center">
+                    <i class="fas fa-wind text-green-600 text-2xl mr-3"></i>
+                    <div>
+                        <p class="text-lg font-semibold text-gray-900">Air Quality</p>
+                        <p class="text-gray-600">
+                            Current AQI:
+                            <span class="font-medium text-green-700">{{ $airQualityIndex['index'] ?? 'Loading...' }}</span> -
+                            <span class="{{ $airQualityIndex['color'] ?? 'text-gray-500' }}">
+                                {{ $airQualityIndex['label'] ?? 'Loading...' }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Walkability -->
+                <div class="flex items-center">
+                    <i class="fas fa-walking text-green-600 text-2xl mr-3"></i>
+                    <div>
+                        <p class="text-lg font-semibold text-gray-900">Walkability</p>
+                        <p class="text-gray-600">Score: <span class="font-medium text-green-700">{{ $walkabilityScore ?? 'Loading...' }}</span></p>
+                    </div>
+                </div>
+
+                <!-- Bikeability -->
+                <div class="flex items-center">
+                    <i class="fas fa-bicycle text-green-600 text-2xl mr-3"></i>
+                    <div>
+                        <p class="text-lg font-semibold text-gray-900">Bikeability</p>
+                        <p class="text-gray-600">Score: <span class="font-medium text-green-700">{{ $bikeabilityScore ?? 'Loading...' }}</span></p>
+                    </div>
+                </div>
+
+                <!-- Green Spaces -->
+                <div class="flex items-center">
+                    <i class="fas fa-tree text-green-600 text-2xl mr-3"></i>
+                    <div>
+                        <p class="text-lg font-semibold text-gray-900">Green Spaces</p>
+                        <p class="text-gray-600">Nearby Parks: <span class="font-medium text-green-700">{{ $nearbyParks ?? 'Loading...' }}</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <p class="text-xs text-gray-500 mt-4 italic">*Data provided by Google Maps API and other environmental sources.</p>
+        </div>
 
 
         <!-- Nearby Information Tabs -->
