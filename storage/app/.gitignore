@@ -1,5 +1,6 @@
 !private/
 !public/
 !.gitignore
-scrape
 zillow
+scrape/*
+!scrape/combined_listings.csv
