@@ -66,7 +66,7 @@ Syracuse DataDay is a Laravel-based application that aggregates and analyzes var
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/syracuse-dataday.git
+git clone https://github.com/rbur0425/syracuse-dataday.git
 ```
 
 2. Install dependencies:
