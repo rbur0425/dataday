@@ -94,6 +94,15 @@ php artisan migrate
 php artisan db:seed
 ```
 
+6. Add API Keys
+
+Add API Keys for
+
+-   Open AI
+-   Google Maps
+-   Air Quality Index
+-   Walk Score
+
 ## 📁 Data Structure
 
 ```
