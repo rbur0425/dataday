@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Http;
 class ApartmentController extends Controller
 {
     const MILES_TO_METERS = 1609.34;
-    const SEARCH_RADIUS_MILES = 0.5;
+    const SEARCH_RADIUS_MILES = 0.25;
 
     public function index(): View
     {

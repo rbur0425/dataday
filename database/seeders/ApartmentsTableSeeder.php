@@ -29,6 +29,10 @@ class ApartmentsTableSeeder extends Seeder
         // Process each row
         while (($row = fgetcsv($file)) !== false) {
             try {
+                // Check if latitude and longitude are available in the CSV row
+                $latitude = !empty($row[8]) ? (float) $row[8] : null;
+                $longitude = !empty($row[9]) ? (float) $row[9] : null;
+                
                 DB::table('apartments')->insert([
                     'complex_name' => $row[0],
                     'street_address' => $row[1],
@@ -38,8 +42,8 @@ class ApartmentsTableSeeder extends Seeder
                     'square_footage' => !empty($row[5]) ? (int) $row[5] : null,
                     'primary_image_url' => $row[6],
                     'phone_number' => !empty($row[7]) ? $row[7] : null,
-                    'latitude' => null,  // Will be populated later by geocoding script
-                    'longitude' => null, // Will be populated later by geocoding script
+                    'latitude' => $latitude,  // Use latitude from CSV file
+                    'longitude' => $longitude, // Use longitude from CSV file
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
